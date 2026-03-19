@@ -3,19 +3,36 @@ import connectDB from "@/lib/mongodb"
 import Product from "@/models/Product"
 
 export async function GET() {
-  await connectDB()
+  try {
+    await connectDB()
 
-  const products = await Product.find().populate("farmer")
+    const products = await Product.find().populate("farmer").lean()
 
-  return NextResponse.json(products)
+    return NextResponse.json(products)
+  } catch (error) {
+    console.error(error)
+    return NextResponse.json({ error: "Database error" }, { status: 500 })
+  }
 }
 
 export async function POST(req: Request) {
-  await connectDB()
+  try {
+    await connectDB()
 
-  const body = await req.json()
+    const body = await req.json()
 
-  const product = await Product.create(body)
+    if (!body.name || !body.price) {
+      return NextResponse.json(
+        { error: "Name and price required" },
+        { status: 400 }
+      )
+    }
 
-  return NextResponse.json(product)
+    const product = await Product.create(body)
+
+    return NextResponse.json(product)
+  } catch (error) {
+    console.error(error)
+    return NextResponse.json({ error: "Create failed" }, { status: 500 })
+  }
 }
